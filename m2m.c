@@ -700,9 +700,10 @@ static void init_device_out(void)
         errno_exit("VIDIOC_G_FMT");
 
     if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_H264 && force_format) {
-        fmt.fmt.pix.width       = 1920;
-        fmt.fmt.pix.height      = 1080;
-        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
+        // RPi 3 needs these values to be set to 640x480
+        fmt.fmt.pix.width       = 640;
+        fmt.fmt.pix.height      = 480;
+        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_H264;
         fmt.fmt.pix.field       = V4L2_FIELD_NONE;
 
         if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt))

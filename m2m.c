@@ -738,13 +738,15 @@ static void init_device_out(void)
 
     struct v4l2_event_subscription sub;
 
-    memset(&sub, 0, sizeof(sub));
+    CLEAR(sub);
 
     sub.type = V4L2_EVENT_EOS;
-    ioctl(fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
+    if (-1 == ioctl(fd, VIDIOC_SUBSCRIBE_EVENT, &sub))
+        errno_exit("VIDIOC_SUBSCRIBE_EVENT");
 
     sub.type = V4L2_EVENT_SOURCE_CHANGE;
-    ioctl(fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
+    if (-1 == ioctl(fd, VIDIOC_SUBSCRIBE_EVENT, &sub))
+        errno_exit("VIDIOC_SUBSCRIBE_EVENT");
 }
 
 static void init_device(void)

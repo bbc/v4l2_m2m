@@ -699,12 +699,18 @@ static void init_device_out(void)
     if (-1 == xioctl(fd, VIDIOC_G_FMT, &fmt))
         errno_exit("VIDIOC_G_FMT");
 
-    if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_H264 && force_format) {
-        // RPi 3 needs these values to be set to 640x480
-        fmt.fmt.pix.width       = 640;
-        fmt.fmt.pix.height      = 480;
-        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_H264;
-        fmt.fmt.pix.field       = V4L2_FIELD_NONE;
+    if (force_format) {
+        if (multi_planar) {
+            fmt.fmt.pix_mp.width       = 1920;
+            fmt.fmt.pix_mp.height      = 1080;
+            fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_H264;
+            fmt.fmt.pix_mp.field       = V4L2_FIELD_NONE;
+        } else {
+            fmt.fmt.pix.width       = 640;
+            fmt.fmt.pix.height      = 480;
+            fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_H264;
+            fmt.fmt.pix.field       = V4L2_FIELD_NONE;
+        }
 
         if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt))
             errno_exit("VIDIOC_S_FMT");
@@ -713,12 +719,27 @@ static void init_device_out(void)
     }
 
     /* Buggy driver paranoia. */
-    min = fmt.fmt.pix.width * 2;
-    if (fmt.fmt.pix.bytesperline < min)
-        fmt.fmt.pix.bytesperline = min;
-    min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-    if (fmt.fmt.pix.sizeimage < min)
-        fmt.fmt.pix.sizeimage = min;
+    if (multi_planar) {
+        unsigned int p;
+
+        for (p = 0; p < FMT_NUM_PLANES; ++p) {
+            min = fmt.fmt.pix_mp.width * 2;
+            if (fmt.fmt.pix_mp.plane_fmt[p].bytesperline > 0 &&
+                fmt.fmt.pix_mp.plane_fmt[p].bytesperline < min)
+                fmt.fmt.pix_mp.plane_fmt[p].bytesperline = min;
+            min = fmt.fmt.pix_mp.plane_fmt[p].bytesperline * fmt.fmt.pix_mp.height;
+            if (fmt.fmt.pix_mp.plane_fmt[p].sizeimage > 0 &&
+                fmt.fmt.pix_mp.plane_fmt[p].sizeimage < min)
+                fmt.fmt.pix_mp.plane_fmt[p].sizeimage = min;
+        }
+    } else {
+        min = fmt.fmt.pix.width * 2;
+        if (fmt.fmt.pix.bytesperline < min)
+            fmt.fmt.pix.bytesperline = min;
+        min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
+        if (fmt.fmt.pix.sizeimage < min)
+            fmt.fmt.pix.sizeimage = min;
+    }
 
     switch (io) {
     case IO_METHOD_READ:
@@ -847,11 +868,18 @@ V4L2_CAP_DEVICE_CAPS
     if (-1 == xioctl(fd, VIDIOC_G_FMT, &fmt))
         errno_exit("VIDIOC_G_FMT");
 
-    if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_H264 && force_format) {
-        fmt.fmt.pix.width       = 640;
-        fmt.fmt.pix.height      = 480;
-        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
-        fmt.fmt.pix.field       = V4L2_FIELD_NONE;
+    if (force_format) {
+        if (multi_planar) {
+            fmt.fmt.pix_mp.width       = 1920;
+            fmt.fmt.pix_mp.height      = 1080;
+            fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUV420;
+            fmt.fmt.pix_mp.field       = V4L2_FIELD_NONE;
+        } else {
+            fmt.fmt.pix.width       = 640;
+            fmt.fmt.pix.height      = 480;
+            fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
+            fmt.fmt.pix.field       = V4L2_FIELD_NONE;
+        }
 
         if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt))
             errno_exit("VIDIOC_S_FMT");
@@ -860,12 +888,27 @@ V4L2_CAP_DEVICE_CAPS
     }
 
     /* Buggy driver paranoia. */
-    min = fmt.fmt.pix.width * 2;
-    if (fmt.fmt.pix.bytesperline < min)
-        fmt.fmt.pix.bytesperline = min;
-    min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-    if (fmt.fmt.pix.sizeimage < min)
-        fmt.fmt.pix.sizeimage = min;
+    if (multi_planar) {
+        unsigned int p;
+
+        for (p = 0; p < FMT_NUM_PLANES; ++p) {
+            min = fmt.fmt.pix_mp.width * 2;
+            if (fmt.fmt.pix_mp.plane_fmt[p].bytesperline > 0 &&
+                fmt.fmt.pix_mp.plane_fmt[p].bytesperline < min)
+                fmt.fmt.pix_mp.plane_fmt[p].bytesperline = min;
+            min = fmt.fmt.pix_mp.plane_fmt[p].bytesperline * fmt.fmt.pix_mp.height;
+            if (fmt.fmt.pix_mp.plane_fmt[p].sizeimage > 0 &&
+                fmt.fmt.pix_mp.plane_fmt[p].sizeimage < min)
+                fmt.fmt.pix_mp.plane_fmt[p].sizeimage = min;
+        }
+    } else {
+        min = fmt.fmt.pix.width * 2;
+        if (fmt.fmt.pix.bytesperline < min)
+            fmt.fmt.pix.bytesperline = min;
+        min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
+        if (fmt.fmt.pix.sizeimage < min)
+            fmt.fmt.pix.sizeimage = min;
+    }
 
     switch (io) {
     case IO_METHOD_READ:

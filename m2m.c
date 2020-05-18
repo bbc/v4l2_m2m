@@ -538,10 +538,10 @@ static void init_mmap(enum v4l2_buf_type type, struct buffer **bufs_out, unsigne
         bufs[b].length = buf.length;
         bufs[b].start =
             mmap(NULL /* start anywhere */,
-                    buf.length,
-                    PROT_READ | PROT_WRITE, /* required */
-                    MAP_SHARED,             /* recommended */
-                    fd, buf.m.offset);
+                 buf.length,
+                 PROT_READ | PROT_WRITE, /* required */
+                 MAP_SHARED,             /* recommended */
+                 fd, buf.m.offset);
 
         if (MAP_FAILED == bufs[b].start)
             errno_exit("mmap");
@@ -596,7 +596,7 @@ static void init_mmap_mp(enum v4l2_buf_type type, struct buffer_mp **bufs_out, u
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index  = b;
         /* length in struct v4l2_buffer in multi-planar API stores the size
-            * of planes array. */
+         * of planes array. */
         buf.length   = FMT_NUM_PLANES;
         buf.m.planes = planes;
 
@@ -611,10 +611,10 @@ static void init_mmap_mp(enum v4l2_buf_type type, struct buffer_mp **bufs_out, u
             bufs[b].length[p] = buf.m.planes[p].length;
             bufs[b].start[p] = 
                 mmap(NULL, 
-                        buf.m.planes[p].length,
-                        PROT_READ | PROT_WRITE, /* required */
-                        MAP_SHARED,             /* recommended */
-                        fd, buf.m.planes[p].m.mem_offset);
+                     buf.m.planes[p].length,
+                     PROT_READ | PROT_WRITE, /* required */
+                     MAP_SHARED,             /* recommended */
+                     fd, buf.m.planes[p].m.mem_offset);
 
             if (MAP_FAILED == bufs[b].start[p])
                 errno_exit("mmap");

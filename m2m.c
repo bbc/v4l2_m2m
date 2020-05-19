@@ -123,48 +123,31 @@ static void supply_input(void *buf, unsigned int buf_len, unsigned int *bytesuse
     }
 }
 
-static int buf_strncmp(char *str1, char *str2, unsigned int count) 
-{
-    unsigned int i;
-
-    for (i = 0; i < count; i++)
-        if (str1[i] != str2[i]) 
-            return -1;
-
-    return 0;
-}
-
-unsigned long last_pos = 0;
+unsigned long f_offset = 0;
 
 static void supply_input_by_au(void *buf, unsigned int buf_len, unsigned int *bytesused)
 {
-    unsigned char *buf_char = (unsigned char*)buf;
-    char rd_buf[5],                     // read 8 chars
-         aud[5] = "\000\000\000\001\t"; // match to H.264 AUD
+    unsigned char *buf_char = (unsigned char*)buf,
+                  aud[5]    = "\000\000\000\001\t";
+    size_t bytes_read, au_length;
+    void *b_offset;
 
-    if (in_fp) {
-        unsigned long bytes_read = last_pos;
-        int found = 0;
+    fseek(in_fp, f_offset, SEEK_SET);
+    bytes_read = fread(buf, 1, buf_len, in_fp);
 
-        do {
-            bytes_read += 1;
-            fseek(in_fp, bytes_read, SEEK_SET);
-            fread(rd_buf, 5, 1, in_fp);
+    b_offset = memmem(buf + 1, bytes_read, 
+                      aud, 5);
 
-            if (rd_buf[0] == 0)
-                if (buf_strncmp(rd_buf, aud, 5) == 0)
-                    found = 1;
-        } while (!found);
-        
-        fseek(in_fp, last_pos, SEEK_SET);
-        *bytesused = fread(buf, 1, bytes_read - last_pos, in_fp);
-        last_pos = bytes_read;
+    au_length = b_offset - buf;
+    f_offset += au_length;
+    *bytesused = au_length;
 
-        fprintf(stderr, "Read %u bytes. First 8 bytes %02x %02x %02x %02x %02x %02x %02x %02x\n", 
-                *bytesused, 
-                buf_char[0], buf_char[1], buf_char[2], buf_char[3],
-                buf_char[4], buf_char[5], buf_char[6], buf_char[7]);
-    }
+    memset(b_offset, 0, buf_len - au_length);
+
+    fprintf(stderr, "Used %u bytes. First 8 bytes %02x %02x %02x %02x %02x %02x %02x %02x\n", 
+            *bytesused, 
+            buf_char[0], buf_char[1], buf_char[2], buf_char[3],
+            buf_char[4], buf_char[5], buf_char[6], buf_char[7]);
 }
 
 static void supply_input_mp(void *buf[], unsigned int buf_len[], unsigned int *bytesused)

@@ -123,6 +123,50 @@ static void supply_input(void *buf, unsigned int buf_len, unsigned int *bytesuse
     }
 }
 
+static int buf_strncmp(char *str1, char *str2, unsigned int count) 
+{
+    unsigned int i;
+
+    for (i = 0; i < count; i++)
+        if (str1[i] != str2[i]) 
+            return -1;
+
+    return 0;
+}
+
+unsigned long last_pos = 0;
+
+static void supply_input_by_au(void *buf, unsigned int buf_len, unsigned int *bytesused)
+{
+    unsigned char *buf_char = (unsigned char*)buf;
+    char rd_buf[5],                     // read 8 chars
+         aud[5] = "\000\000\000\001\t"; // match to H.264 AUD
+
+    if (in_fp) {
+        unsigned long bytes_read = last_pos;
+        int found = 0;
+
+        do {
+            bytes_read += 1;
+            fseek(in_fp, bytes_read, SEEK_SET);
+            fread(rd_buf, 5, 1, in_fp);
+
+            if (rd_buf[0] == 0)
+                if (buf_strncmp(rd_buf, aud, 5) == 0)
+                    found = 1;
+        } while (!found);
+        
+        fseek(in_fp, last_pos, SEEK_SET);
+        *bytesused = fread(buf, 1, bytes_read - last_pos, in_fp);
+        last_pos = bytes_read;
+
+        fprintf(stderr, "Read %u bytes. First 8 bytes %02x %02x %02x %02x %02x %02x %02x %02x\n", 
+                *bytesused, 
+                buf_char[0], buf_char[1], buf_char[2], buf_char[3],
+                buf_char[4], buf_char[5], buf_char[6], buf_char[7]);
+    }
+}
+
 static void supply_input_mp(void *buf[], unsigned int buf_len[], unsigned int *bytesused)
 {
     unsigned int p;
@@ -130,7 +174,7 @@ static void supply_input_mp(void *buf[], unsigned int buf_len[], unsigned int *b
 
     for (p = 0; p < FMT_NUM_PLANES; ++p) {
         unsigned int bytes;
-        supply_input(buf[p], buf_len[p], &bytes);
+        supply_input_by_au(buf[p], buf_len[p], &bytes);
         tot_bytes += bytes;
     }
 
